@@ -1,0 +1,13 @@
+menu "WOL Configuration"
+  config WIFI_SSID
+    string "Wifi SSID"
+    default "myssid"
+    help
+      SSID (network name) to connect to
+
+  config WIFI_PASSWORD
+    string "Wifi password"
+    default "password"
+    help
+      WiFi password
+endmenu

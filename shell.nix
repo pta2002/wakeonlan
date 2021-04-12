@@ -35,24 +35,31 @@ let
           sha256="66c9268862641abcac4a96ba74506e594c884e3f57690a696d21ad8210ed667a";
           };
         });
+        checkPhase = "";
+        installCheckPhase = "";
+        pipInstallCheckPhase = "";
       };
   in pkgs.python2.override{inherit packageOverrides; self= python2o;};
+
+  pyPackages = python2o.withPackages (ppkgs: with ppkgs; [
+    pyserial future cryptography setuptools pyelftools ppkgs.pyparsing click pip
+  ]);
 
   esp-idf = stdenv.mkDerivation rec {
     name = "esp-idf";
 
     src = pkgs.fetchgit {
       url = "https://github.com/espressif/esp-idf";
-      rev  = "v4.1-dev";
+      rev  = "v4.1";
       deepClone = true;
-      sha256 = "0d1iqxz1jqz3rrk2c5dq33wp1v71d9190wv3bnigxlp5kcsj0j1w";
+      sha256 = "1fznkmg66ambpb2frf8bzkphp6da0g5p3lb85bcsk04hfyyml5aq";
     };
 
     dontBuild = true;
     dontConfigure = true;
     buildInputs = with pkgs; [
       gawk gperf gettext automake bison flex texinfo help2man libtool autoconf ncurses5 cmake glibcLocales
-      (python2o.withPackages (ppkgs: with ppkgs; [ pyserial future cryptography setuptools pyelftools ppkgs.pyparsing click ]))
+      pyPackages
       esp-toolchain
     ];
 
@@ -66,14 +73,19 @@ let
     targetPkgs = pkgs: with pkgs; [ zlib ];
     runScript = "";
   };
+
 in
 mkShell {
   name = "wakeonlan";
-  buildInputs = [ esp-idf esp-toolchain esptool cmake python2o ];
+  buildInputs = [
+    esp-idf esp-toolchain cmake ninja python2o pyPackages
+    gawk gperf gettext automake bison flex texinfo help2man libtool autoconf ncurses5 glibcLocales
+  ];
   shellHook = ''
     set -e
     export IDF_PATH=${esp-idf}
     export NIX_CFLAGS_LINK=-lncurses
+    # export PATH=`echo $PATH | awk -v RS=: -v ORS=: '/python3-3.8/ {next} {print}';`
     export PATH=$PATH:$IDF_PATH/tools
   '';
 }
